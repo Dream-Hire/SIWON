@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ododok.demo.auth.mapper.AuthMapper">
+
+    <!-- 결과 매핑 -->
+    <resultMap id="refreshTokenResultMap" type="RefreshToken">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="token" column="token"/>
+        <result property="expiresAt" column="expires_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 공통 컬럼 -->
+    <sql id="refreshTokenColumns">
+        id, user_id, token, expires_at, created_at
+    </sql>
+
+    <!-- 리프레시 토큰 저장 -->
+    <insert id="insertRefreshToken" parameterType="RefreshToken" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO refresh_tokens (
+        user_id, token, expires_at
+        ) VALUES (
+        #{userId}, #{token}, #{expiresAt}
+        )
+    </insert>
+
+    <!-- 토큰 값으로 조회 -->
+    <select id="findByToken" resultMap="refreshTokenResultMap">
+        SELECT <include refid="refreshTokenColumns"/>
+        FROM refresh_tokens
+        WHERE token = #{token}
+    </select>
+
+    <!-- 사용자 ID로 조회 (가장 최근 것) -->
+    <select id="findByUserId" resultMap="refreshTokenResultMap">
+        SELECT <include refid="refreshTokenColumns"/>
+        FROM refresh_tokens
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <!-- 사용자의 모든 리프레시 토큰 조회 -->
+    <select id="findAllByUserId" resultMap="refreshTokenResultMap">
+        SELECT <include refid="refreshTokenColumns"/>
+        FROM refresh_tokens
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 토큰 삭제 -->
+    <delete id="deleteByToken">
+        DELETE FROM refresh_tokens
+        WHERE token = #{token}
+    </delete>
+
+    <!-- 사용자의 모든 토큰 삭제 -->
+    <delete id="deleteAllByUserId">
+        DELETE FROM refresh_tokens
+        WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 만료된 토큰 삭제 -->
+    <delete id="deleteExpiredTokens">
+        DELETE FROM refresh_tokens
+        WHERE expires_at &lt; #{now}
+    </delete>
+
+    <!-- 토큰 존재 여부 확인 -->
+    <select id="existsByToken" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM refresh_tokens
+        WHERE token = #{token}
+    </select>
+
+    <!-- 사용자의 토큰 개수 조회 -->
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM refresh_tokens
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 토큰 업데이트 (토큰 로테이션) -->
+    <update id="updateToken">
+        UPDATE refresh_tokens
+        SET
+        token = #{newToken},
+        expires_at = #{newExpiresAt}
+        WHERE token = #{oldToken}
+    </update>
+
+</mapper>
