@@ -34,8 +34,5 @@ COPY --from=build /app/build/libs/*.jar app.jar
 # 포트 노출
 EXPOSE 8080
 
-# JVM 옵션 최적화 (EC2 t2.micro용)
-ENV JAVA_OPTS="-Xmx256m -Xms128m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-
 # 애플리케이션 실행
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
